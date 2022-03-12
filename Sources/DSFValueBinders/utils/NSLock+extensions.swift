@@ -1,4 +1,6 @@
 //
+//  NSLock+extensions.swift
+//
 //  Created by Darren Ford on 13/3/22
 //
 //  MIT License
@@ -13,7 +15,7 @@
 //  The above copyright notice and this permission notice shall be included in all
 //  copies or substantial portions of the Software.
 //
-//  THE SOFTWARE IS PROVIDED "AS IzS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 //  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 //  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
 //  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
@@ -24,8 +26,11 @@
 
 import Foundation
 
-/// Errors that can occur
-public enum ValueBinderErrors: Error {
-	/// Unable to connect to a key path
-	case invalidKeyPath
+extension NSLock {
+	@inline(__always) func tryLock(_ block: () throws -> Void) rethrows {
+		if self.try() {
+			defer { self.unlock() }
+			try block()
+		}
+	}
 }
