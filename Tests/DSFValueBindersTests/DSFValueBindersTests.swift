@@ -288,7 +288,7 @@ final class DSFValueBindersMacOnlyTests: XCTestCase {
 
 			lazy var boundKeyPath: KeyPathBinder<MyViewController, NSControl.StateValue> = {
 				return try! .init(self, keyPath: \.buttonState) { newValue in
-					Swift.print("boundKeyPath notifies change: \(String(describing: newValue))")
+					Swift.print("boundKeyPath notifies change: \(newValue)")
 				}
 			}()
 

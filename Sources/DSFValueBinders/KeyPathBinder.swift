@@ -49,10 +49,10 @@ import os
 ///
 /// generates the output:
 /// ```
-/// > new value is Optional(-9876.54)
-/// > new value is Optional(1024.56)
+/// > new value is -9876.54
+/// > new value is 1024.56
 /// ```
-public class KeyPathBinder<ClassType: NSObject, ValueType: Any>: ValueBinder<ValueType?> {
+public class KeyPathBinder<ClassType: NSObject, ValueType: Any>: ValueBinder<ValueType> {
 	/// Create a key path binding object
 	/// - Parameters:
 	///   - object: The object containing the key path to observe
@@ -64,30 +64,30 @@ public class KeyPathBinder<ClassType: NSObject, ValueType: Any>: ValueBinder<Val
 		_ object: ClassType,
 		keyPath: KeyPath<ClassType, ValueType>,
 		_ identifier: String = "",
-		_ callback: ((ValueType?) -> Void)? = nil
+		_ callback: ((ValueType) -> Void)? = nil
 	) throws {
 		self.callback = callback
 		self.object = object
 
+		// A bit hacky - we need the STRING representation of the keypath for NSObject's calls later.
 		let stringKeyPath = NSExpression(forKeyPath: keyPath).keyPath
 		guard !stringKeyPath.isEmpty else {
 			throw ValueBinderErrors.invalidKeyPath
 		}
 		self.stringPath = stringKeyPath
 
-		// Grab out the initial value from the bound keypath
-		let initialValue = object.value(forKeyPath: stringKeyPath) as? ValueType
+		// Grab out the initial value from the bound keypath.
+		// If we cannot get a valid value from the keypath then throw an error (maybe it's a type mismatch?)
+		guard let initialValue = object.value(forKeyPath: stringKeyPath) as? ValueType else {
+			throw ValueBinderErrors.keyPathInvalidValue
+		}
 
 		super.init(initialValue, identifier)
 
+		// Start listening for kvo changes
 		self.kvoObservation = object.observe(keyPath, options: [.new]) { [weak self] obj, value in
 			self?.kvoUpdate(value)
 		}
-	}
-
-	/// Type erase the keypathbinder
-	@inlinable public var asValueBinder: ValueBinder<ValueType?> {
-		self as ValueBinder<ValueType?>
 	}
 
 	deinit {
@@ -98,24 +98,25 @@ public class KeyPathBinder<ClassType: NSObject, ValueType: Any>: ValueBinder<Val
 	private var kvoObservation: NSKeyValueObservation?
 	private let stringPath: String
 	private let lock = NSLock()
-	private let callback: ((ValueType?) -> Void)?
+	private let callback: ((ValueType) -> Void)?
 
 	// MARK: - Change handling
 
 	private func kvoUpdate(_ value: NSKeyValueObservedChange<ValueType>) {
 		self.lock.tryLock {
-			os_log(
-				"%@ [%@] kvo binding did update value to '%@'",
-				log: .default,
-				type: .debug,
-				"\(type(of: self))",
-				"\(self.identifier)",
-				"\(String(describing: value.newValue))"
-			)
-
-			// The bound keypath has changed (and it's not from us). Update the value
-			self.wrappedValue = value.newValue
-			self.callback?(value.newValue)
+			if let newValue = value.newValue {
+				os_log(
+					"%@ [%@] KVO update to '%@'",
+					log: .default,
+					type: .debug,
+					"\(type(of: self))",
+					"\(self.identifier)",
+					"\(newValue)"
+				)
+				// The bound keypath has changed (and it's not from us). Update the value
+				self.wrappedValue = newValue
+				self.callback?(newValue)
+			}
 		}
 	}
 
@@ -124,12 +125,12 @@ public class KeyPathBinder<ClassType: NSObject, ValueType: Any>: ValueBinder<Val
 
 		self.lock.tryLock {
 			os_log(
-				"%@ [%@] did update value to '%@'",
+				"%@ [%@] value update to '%@'",
 				log: .default,
 				type: .debug,
 				"\(type(of: self))",
 				"\(self.identifier)",
-				"\(String(describing: self.wrappedValue))"
+				"\(self.wrappedValue)"
 			)
 
 			// Push the new value through to the bound keypath

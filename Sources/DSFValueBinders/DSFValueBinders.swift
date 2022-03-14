@@ -28,4 +28,6 @@ import Foundation
 public enum ValueBinderErrors: Error {
 	/// Unable to connect to a key path
 	case invalidKeyPath
+	/// An attempt to retrieve the value from a keyPath with the specified ValueType failed.
+	case keyPathInvalidValue
 }
