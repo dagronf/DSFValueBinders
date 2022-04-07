@@ -1,7 +1,7 @@
 //
-//  KeyPathBinder.swift
+//  EnumKeyPathBinder.swift
 //
-//  Created by Darren Ford on 13/3/22
+//  Created by Darren Ford on 8/4/22
 //  Copyright © 2022 Darren Ford. All rights reserved.
 //
 //  MIT License
@@ -28,33 +28,33 @@
 import Foundation
 import os
 
-/// A binder for key path values
+/// A specialized KeyPath binder specifically for enum types.
 ///
 /// Simple example :-
 ///
 /// ```swift
 /// class ViewController: NSViewController {
 ///    // A dynamic value. Could be bound to a UI control via IB (for example)
-///    @objc dynamic var dynamicValue: Double = 0
+///    @objc dynamic var toolbarSize: NSToolbar.SizeMode = .regular
 ///    // The binder object
-///    lazy var binder = try! KeyPathBinder(self, keyPath: \.dynamicValue) { newValue in
+///    lazy var binder = try! EnumKeyPathBinder(self, keyPath: \.toolbarSize) { newValue in
 ///       Swift.print("> new value is \(newValue)")
 ///    }
 ///    ...
 ///    // Update the dynamicValue via the binder
-///    binder.wrappedValue = -9876.54
-///    // Update the binder via the dynamicValue
-///    dynamicValue = 1024.56
+///    self.binder.wrappedValue = .small
+///    // Update the binder via its dynamic variable
+///    self.toolbarSize = .regular
 /// }
 /// ```
 ///
 /// generates the output:
 /// ```
-/// > new value is -9876.54
-/// > new value is 1024.56
+/// > new value is NSToolbarSizeMode(rawValue: 2)
+/// > new value is NSToolbarSizeMode(rawValue: 1)
 /// ```
-public class KeyPathBinder<ClassType: NSObject, ValueType: Any>: ValueBinder<ValueType> {
-	/// Create a key path binding object
+public class EnumKeyPathBinder<ClassType: NSObject, ValueType: RawRepresentable>: ValueBinder<ValueType> {
+	/// Create a key path binding object for an enum value
 	/// - Parameters:
 	///   - object: The object containing the key path to observe
 	///   - keyPath: The key path to observe
@@ -79,9 +79,11 @@ public class KeyPathBinder<ClassType: NSObject, ValueType: Any>: ValueBinder<Val
 
 		// Grab out the initial value from the bound keypath.
 		// If we cannot get a valid value from the keypath then throw an error (maybe it's a type mismatch?)
-		guard let initialValue = object.value(forKeyPath: stringKeyPath) as? ValueType else {
-			Swift.print("The specified key path couldn't be resolved.")
-			Swift.print("If `keyPath` refers to an enum (eg, `NSToolbar.SizeMode`) use `EnumKeyPathBinder` instead")
+		guard
+			let raw = object.value(forKeyPath: stringKeyPath) as? ValueType.RawValue,
+			let initialValue = ValueType(rawValue: raw)
+		else {
+			Swift.print("The specified key path couldn't be resolved")
 			throw ValueBinderErrors.keyPathInvalidValue
 		}
 
@@ -89,7 +91,11 @@ public class KeyPathBinder<ClassType: NSObject, ValueType: Any>: ValueBinder<Val
 
 		// Start listening for kvo changes
 		self.kvoObservation = object.observe(keyPath, options: [.new]) { [weak self] obj, value in
-			self?.kvoUpdate(value)
+			if let raw = obj.value(forKeyPath: stringKeyPath) as? ValueType.RawValue,
+			   let newValue = ValueType(rawValue: raw)
+			{
+				self?.kvoUpdate(newValue)
+			}
 		}
 	}
 
@@ -105,21 +111,21 @@ public class KeyPathBinder<ClassType: NSObject, ValueType: Any>: ValueBinder<Val
 
 	// MARK: - Change handling
 
-	private func kvoUpdate(_ value: NSKeyValueObservedChange<ValueType>) {
+	private func kvoUpdate(_ value: ValueType) {
 		self.lock.tryLock {
-			if let newValue = value.newValue {
-				os_log(
-					"%@ [%@] KVO update to '%@'",
-					log: .default,
-					type: .debug,
-					"\(type(of: self))",
-					"\(self.identifier)",
-					"\(newValue)"
-				)
-				// The bound keypath has changed (and it's not from us). Update the value
-				self.wrappedValue = newValue
-				self.callback?(newValue)
-			}
+			// The bound keypath has changed (and it's not from us). Update the value
+			self.wrappedValue = value
+
+			os_log(
+				"%@ [%@] value update to '%@'",
+				log: .default,
+				type: .debug,
+				"\(type(of: self))",
+				"\(self.identifier)",
+				"\(self.wrappedValue)"
+			)
+
+			self.callback?(value)
 		}
 	}
 
@@ -137,7 +143,7 @@ public class KeyPathBinder<ClassType: NSObject, ValueType: Any>: ValueBinder<Val
 			)
 
 			// Push the new value through to the bound keypath
-			object?.setValue(self.wrappedValue, forKey: stringPath)
+			object?.setValue(self.wrappedValue.rawValue, forKey: stringPath)
 			self.callback?(self.wrappedValue)
 		}
 	}

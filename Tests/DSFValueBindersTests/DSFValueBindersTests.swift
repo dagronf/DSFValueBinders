@@ -276,7 +276,93 @@ final class DSFValueBindersTests: XCTestCase {
 		c.one.update()
 		c.two.update()
 	}
+
+	@objc enum TestingType: Int {
+		case initial = 0
+		case first = 1
+		case second = 2
+	}
+
+
+	func testEnumKeyPathBinding() {
+		@objc class Container: NSObject {
+			let deleteExp: XCTestExpectation
+
+			@objc dynamic public var testingMode = TestingType.initial
+			lazy var currentValue: TestingType = self.testingMode
+
+			lazy var boundKeyPath: EnumKeyPathBinder<Container, TestingType> = {
+				return try! .init(self, keyPath: \.testingMode) { [weak self] newValue in
+					Swift.print("boundKeyPath notifies change: \(newValue)")
+					self?.currentValue = newValue
+				}
+			}()
+
+			init(_ deleteExp: XCTestExpectation) {
+				self.deleteExp = deleteExp
+				super.init()
+				_ = boundKeyPath
+			}
+
+			deinit {
+				Swift.print("Container: deinit")
+				deleteExp.fulfill()
+			}
+		}
+
+		let deletionCheck = XCTestExpectation()
+
+		autoreleasepool {
+
+			// Check for callbacks on registered listeners
+			// There should be 4 updates on the registered callback
+			let exp = XCTestExpectation()
+			exp.expectedFulfillmentCount = 4
+
+			let c = Container(deletionCheck)
+			XCTAssertEqual(.initial, c.testingMode)
+
+			// Note that this will be called 4 times, as when the observer is registered we
+			// trigger the callback with the current value for the binding
+			c.boundKeyPath.register(self) { newValue in
+				Swift.print("registered object received update: \(newValue)")
+				exp.fulfill()
+			}
+
+			let expCombine = XCTestExpectation()
+			expCombine.expectedFulfillmentCount = 3
+
+			// Check for combine publishing on the enum observer
+			let cancellable = c.boundKeyPath.passthroughSubject.sink { newValue in
+				Swift.print("combine publisher received update: \(newValue)")
+				expCombine.fulfill()
+			}
+
+			// To hide the 'unused' message in Xcode
+			_ = cancellable
+
+			// Check to see if the update block is called
+			c.testingMode = .first
+			XCTAssertEqual(.first, c.currentValue)
+
+			// Check to see if the update block is called
+			c.testingMode = .second
+			XCTAssertEqual(.second, c.currentValue)
+
+			// Update the keypath object directly
+			c.boundKeyPath.wrappedValue = .initial
+			XCTAssertEqual(.initial, c.currentValue)
+
+			wait(for: [exp, expCombine], timeout: 2)
+		}
+
+		// Make sure that the container cleans up, which means that the
+		// EnumKeyPathValue object has been deleted too
+		wait(for: [deletionCheck], timeout: 5)
+	}
 }
+
+// Tests for picking up the specific issue that I found in DSFToolbar
 
 #if os(macOS)
 final class DSFValueBindersMacOnlyTests: XCTestCase {
@@ -317,5 +403,26 @@ final class DSFValueBindersMacOnlyTests: XCTestCase {
 		obj.resetState()
 		XCTAssertEqual(.on, obj.buttonState)
 	}
+
+	@objc dynamic public var sizeMode = NSToolbar.SizeMode.regular
+	func testEnum() {
+
+		var exp = XCTestExpectation()
+
+		let boundKeyPath: EnumKeyPathBinder<DSFValueBindersMacOnlyTests, NSToolbar.SizeMode> = {
+			return try! .init(self, keyPath: \.sizeMode) { newValue in
+				Swift.print("boundKeyPath notifies change: \(newValue)")
+				exp.fulfill()
+			}
+		}()
+
+		sizeMode = .small
+		wait(for: [exp], timeout: 5)
+
+		exp = XCTestExpectation()
+		sizeMode = .default
+		wait(for: [exp], timeout: 5)
+	}
 }
+
 #endif

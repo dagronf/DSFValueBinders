@@ -29,5 +29,6 @@ public enum ValueBinderErrors: Error {
 	/// Unable to connect to a key path
 	case invalidKeyPath
 	/// An attempt to retrieve the value from a keyPath with the specified ValueType failed.
+	/// This may also be called if the KeyPath binds to an enum object (use EnumKeyPathBinder instead)
 	case keyPathInvalidValue
 }

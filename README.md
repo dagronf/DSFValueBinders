@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-    <img src="https://img.shields.io/badge/Swift-5.0-orange.svg" />
+    <img src="https://img.shields.io/badge/Swift-5.3-orange.svg" />
     <img src="https://img.shields.io/badge/License-MIT-lightgrey" />
     <a href="https://swift.org/package-manager">
         <img src="https://img.shields.io/badge/spm-compatible-brightgreen.svg?style=flat" alt="Swift Package Manager" />
@@ -95,6 +95,17 @@ lazy var boundKeyPath: KeyPathBinder<MyViewController, NSControl.StateValue> = {
    }
 }()
 ```
+
+## EnumKeyPathBinder
+
+An `EnumKeyPathBinder` is a keypath binder for observing Swift `enum` types.
+
+I had a situation where I was tring to use a `KeyPathBinder` on the size mode for a toolbar which is of type 
+`NSToolbar.SizeMode`, and it continually failed. However, binding to `NSControl.StateValue` on a control worked fine.
+
+The result was that `NSControl.StateValue`, while appearing _like_ an enum is actually a struct, whereas `NSToolbar.SizeMode`
+is an enum (specifically, a RawRepresentable).  The issue appears when trying to observe enum type changes, so this class
+is a specialization of `KeyPathBinder` specifically for observing such enum types.
 
 ## Combine
 
