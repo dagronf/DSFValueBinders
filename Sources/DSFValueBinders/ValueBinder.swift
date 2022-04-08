@@ -50,8 +50,17 @@ public class ValueBinder<ValueType: Any> {
 	/// Can be overridden by inherited classes, but `super.valueDidChange()` MUST be called first in the override
 	open func valueDidChange() {
 		let value = self.wrappedValue
+
+		var hasInactiveBindings = false
+
 		self.bindings.forEach { binding in
-			binding.didChange(value)
+			if binding.didChange(value) == false {
+				hasInactiveBindings = true
+			}
+		}
+
+		if hasInactiveBindings {
+			self.cleanupInactiveBindings()
 		}
 
 		// Update the publisher value for combine. Does nothing for < 10.15
@@ -107,6 +116,11 @@ public class ValueBinder<ValueType: Any> {
 
 	// The object that are binding to the value of this object
 	private var bindings = [Binding]()
+
+	/// Returns the number of active registered bindings
+	public var activeBindingCount: Int { self.bindings.filter({ $0.isAlive }).count }
+	/// Returns the total number of registered bindings, including those which are no longer active
+	public var totalBindingCount: Int { self.bindings.count }
 
 	// The internal publisher object for Combine
 	@available(macOS 10.15, iOS 13, tvOS 13, *)

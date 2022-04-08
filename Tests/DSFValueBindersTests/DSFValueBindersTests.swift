@@ -360,6 +360,51 @@ final class DSFValueBindersTests: XCTestCase {
 		// EnumKeyPathValue object has been deleted too
 		wait(for: [deletionCheck], timeout: 5)
 	}
+
+	func testRegisterWeak() {
+
+		class Wrapper: NSObject {
+			init(wrapper: ValueBinder<Int>) {
+				super.init()
+				wrapper.register(self) { newValue in
+					Swift.print("newValue = \(newValue)")
+				}
+			}
+		}
+
+		// A simple int binding
+		let intBinding = ValueBinder(1) { newValue in
+			Swift.print("intBinding value is now \(newValue)")
+		}
+
+		// The `intBinding` instance has a registered binding (the callback)
+		XCTAssertEqual(1, intBinding.activeBindingCount)
+
+		// Create a registered listener within an autorelease pool
+		// so that we can force it to delete when needed
+		autoreleasepool {
+			let w = Wrapper(wrapper: intBinding)
+
+			// We've added a binding
+			XCTAssertEqual(2, intBinding.activeBindingCount)
+			XCTAssertEqual(2, intBinding.totalBindingCount)
+			intBinding.wrappedValue = 4
+
+			// So that we don't lose the wrapper instance
+			_ = w
+		}
+
+		// w has gone out of scope, should have been marked as inactive within the binding
+		XCTAssertEqual(1, intBinding.activeBindingCount)
+
+		// The total count will still be 2, as the binding array hasn't been cleared up yet
+		XCTAssertEqual(2, intBinding.totalBindingCount)
+
+		// If we change the value, the inactive bindings should be cleaned up and removed.
+		intBinding.wrappedValue = 300
+		XCTAssertEqual(1, intBinding.totalBindingCount)
+		XCTAssertEqual(1, intBinding.activeBindingCount)
+	}
 }
 
 // Tests for picking up the specific issue that I found in DSFToolbar
@@ -415,6 +460,7 @@ final class DSFValueBindersMacOnlyTests: XCTestCase {
 				exp.fulfill()
 			}
 		}()
+		_ = boundKeyPath
 
 		sizeMode = .small
 		wait(for: [exp], timeout: 5)
