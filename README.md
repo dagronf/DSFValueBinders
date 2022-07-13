@@ -109,12 +109,14 @@ is a specialization of `KeyPathBinder` specifically for observing such enum type
 
 ## Combine
 
-Both binder types expose a property `passthroughSubject` which you can hook up to your combine workflow.
+Both binder types expose a property `publisher` which you can hook up to your combine workflow.
+
+If the OS doesn't support Combine, the `publisher` property will be nil.
 
 ```swift
 let binder = ValueBinder(0) 
 ...
-let cancellable = binder.passthroughSubject.sink { newValue in
+let cancellable = binder.publisher?.sink { newValue in
    // do something with `newValue`
 }
 ```

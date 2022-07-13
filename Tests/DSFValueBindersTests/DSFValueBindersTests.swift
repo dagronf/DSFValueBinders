@@ -133,38 +133,42 @@ final class DSFValueBindersTests: XCTestCase {
 
 	func testValuePublishingValues() {
 		let vb = ValueBinder("Noodles")
-
-		let expectation = XCTestExpectation()
 		var results: [String] = []
-
-		let cancellable = vb.passthroughSubject.sink { newValue in
-			results.append(newValue)
-			if results.count == 3 {
-				expectation.fulfill()
-			}
-		}
-
-		vb.wrappedValue = "caterpillar"
-		vb.wrappedValue = "fish"
-		vb.wrappedValue = "lots of trees"
-
-		self.wait(for: [expectation], timeout: 5.0)
-
-		XCTAssertEqual(["caterpillar", "fish", "lots of trees"], results)
-
-		cancellable.cancel()
 
 		do {
 			let expectation = XCTestExpectation()
-			let cancellable = vb.passthroughSubject.sink { newValue in
+
+			let cancellable = vb.publisher?.sink { newValue in
+				results.append(newValue)
+				if results.count == 3 {
+					expectation.fulfill()
+				}
+			}
+			XCTAssertNotNil(cancellable)
+
+			vb.wrappedValue = "caterpillar"
+			vb.wrappedValue = "fish"
+			vb.wrappedValue = "lots of trees"
+
+			self.wait(for: [expectation], timeout: 5.0)
+
+			XCTAssertEqual(["caterpillar", "fish", "lots of trees"], results)
+
+			cancellable!.cancel()
+		}
+
+		do {
+			let expectation = XCTestExpectation()
+			let cancellable = vb.sink { newValue in
 				results.append(newValue)
 				expectation.fulfill()
 			}
+			XCTAssertNotNil(cancellable)
 
 			vb.wrappedValue = "yum cha"
 			self.wait(for: [expectation], timeout: 5.0)
 			XCTAssertEqual(["caterpillar", "fish", "lots of trees", "yum cha"], results)
-			cancellable.cancel()
+			cancellable!.cancel()
 		}
 	}
 
@@ -186,12 +190,13 @@ final class DSFValueBindersTests: XCTestCase {
 
 		let co = ContainerObject()
 
-		let cancellable = co.kp.passthroughSubject.sink { newValue in
+		let cancellable = co.kp.sink { newValue in
 			results.append(newValue)
 			if results.count == 3 {
 				expectation.fulfill()
 			}
 		}
+		XCTAssertNotNil(cancellable)
 
 		// Set via the keypath
 		co.doubleValue = 1.2345
@@ -209,7 +214,7 @@ final class DSFValueBindersTests: XCTestCase {
 		self.wait(for: [expectation], timeout: 5.0)
 		XCTAssertEqual([1.2345, -15.6, 1123], results)
 
-		cancellable.cancel()
+		cancellable?.cancel()
 	}
 
 	func testDoco1() {
@@ -333,10 +338,11 @@ final class DSFValueBindersTests: XCTestCase {
 			expCombine.expectedFulfillmentCount = 3
 
 			// Check for combine publishing on the enum observer
-			let cancellable = c.boundKeyPath.passthroughSubject.sink { newValue in
+			let cancellable = c.boundKeyPath.sink { newValue in
 				Swift.print("combine publisher received update: \(newValue)")
 				expCombine.fulfill()
 			}
+			XCTAssertNotNil(cancellable)
 
 			// To hide the 'unused' message in Xcode
 			_ = cancellable

@@ -1,27 +1,22 @@
 //
 //  ValueBinder.swift
 //
-//  Created by Darren Ford on 13/3/22
+//  Copyright © 2022 Darren Ford. All rights reserved.
 //
-//  MIT License
+//  MIT license
 //
-//  Permission is hereby granted, free of charge, to any person obtaining a copy
-//  of this software and associated documentation files (the "Software"), to deal
-//  in the Software without restriction, including without limitation the rights
-//  to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
-//  copies of the Software, and to permit persons to whom the Software is
-//  furnished to do so, subject to the following conditions:
+//  Permission is hereby granted, free of charge, to any person obtaining a copy of this software and associated
+//  documentation files (the "Software"), to deal in the Software without restriction, including without limitation the
+//  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies of the Software, and to
+//  permit persons to whom the Software is furnished to do so, subject to the following conditions:
 //
-//  The above copyright notice and this permission notice shall be included in all
-//  copies or substantial portions of the Software.
+//  The above copyright notice and this permission notice shall be included in all copies or substantial
+//  portions of the Software.
 //
-//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-//  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-//  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-//  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-//  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
-//  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-//  SOFTWARE.
+//  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE
+//  WARRANTIES OF MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS
+//  OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR
+//  OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 //
 
 import Foundation
@@ -64,22 +59,19 @@ public class ValueBinder<ValueType: Any> {
 		}
 
 		// Update the publisher value for combine. Does nothing for < 10.15
-		if self.isPublishing {
-			if #available(macOS 10.15, iOS 13, tvOS 13, *) {
-				self.__publisher.send(value)
-			}
+		if #available(macOS 10.15, iOS 13, tvOS 13, *) {
+			self.send(value)
 		}
 	}
 
-	/// A combine publisher for the binding
+	/// A combine publisher for the binding. If Combine isn't available, will be nil
 	///
 	/// ```
-	/// let cancellable = binder.publisher.sink { newValue in
+	/// let cancellable = binder.publisher?.sink { newValue in
 	///    // do something with newValue
 	/// }
 	/// ```
-	@available(macOS 10.15, iOS 13, tvOS 13, *)
-	public private(set) lazy var passthroughSubject: AnyPublisher<ValueType, Never> = __publisher.eraseToAnyPublisher()
+	public private(set) lazy var publisher = WrappedPublisher<ValueType>()
 
 	/// Create a bound value
 	///
@@ -114,24 +106,13 @@ public class ValueBinder<ValueType: Any> {
 
 	// MARK: Private
 
-	// The object that are binding to the value of this object
-	private var bindings = [Binding]()
-
 	/// Returns the number of active registered bindings
-	public var activeBindingCount: Int { self.bindings.filter({ $0.isAlive }).count }
+	public var activeBindingCount: Int { self.bindings.filter { $0.isAlive }.count }
 	/// Returns the total number of registered bindings, including those which are no longer active
 	public var totalBindingCount: Int { self.bindings.count }
 
-	// The internal publisher object for Combine
-	@available(macOS 10.15, iOS 13, tvOS 13, *)
-	private lazy var __publisher: PassthroughSubject<ValueType, Never> = {
-		self.isPublishing = true
-		return PassthroughSubject<ValueType, Never>()
-	}()
-
-	// true when the combine publisher is generating values
-	internal var isPublishing = false
-
+	// The object that are binding to the value of this object
+	private var bindings = [Binding]()
 	// A string representation of the object (used for logging)
 	private lazy var selfTypeString = "\(type(of: self))"
 }
@@ -168,6 +149,27 @@ public extension ValueBinder {
 	func deregisterAll() {
 		self.bindings.forEach { $0.deregister() }
 		self.bindings = []
+	}
+}
+
+@available(macOS 10.15, iOS 13, tvOS 13, *)
+public extension ValueBinder {
+	/// Sends a value to the subscriber.
+	internal func send(_ input: ValueType) {
+		self.publisher?.passthroughSubject.send(input)
+	}
+
+	/// Attaches a subscriber with closure-based behavior to a publisher that never fails. Returns `nil` if the publisher isn't available
+	func sink(receiveValue: @escaping ((ValueType) -> Void)) -> AnyCancellable? {
+		self.publisher?.passthroughSubject.sink(receiveValue: receiveValue)
+	}
+
+	/// Attaches a subscriber with closure-based behavior. Returns `nil` if the publisher isn't available
+	func sink(
+		 receiveCompletion: @escaping ((Subscribers.Completion<Never>) -> Void),
+		 receiveValue: @escaping ((ValueType) -> Void)
+	) -> AnyCancellable? {
+		self.publisher?.passthroughSubject.sink(receiveCompletion: receiveCompletion, receiveValue: receiveValue)
 	}
 }
 
