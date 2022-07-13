@@ -60,7 +60,7 @@ public class ValueBinder<ValueType: Any> {
 
 		// Update the publisher value for combine. Does nothing for < 10.15
 		if #available(macOS 10.15, iOS 13, tvOS 13, *) {
-			self.send(value)
+			self.publisher?.send(value)
 		}
 	}
 
@@ -122,16 +122,16 @@ public class ValueBinder<ValueType: Any> {
 public extension ValueBinder {
 	/// Register a listener block to be notified when the value changes
 	/// - Parameters:
-	///   - object: The registering object. Held weakly to detect when the registering object is deallocated and we should no longer call the change block
+	///   - object: The registering object. Held weakly to detect when the registering object is deallocated and we should no longer call the change block. If nil, uses the ValueBinder object itself as the lifetime
 	///   - changeBlock: The block to call when the value in the ValueBinder instance changes
-	func register(_ object: AnyObject, _ changeBlock: @escaping (ValueType) -> Void) {
+	func register(_ object: AnyObject? = nil, _ changeBlock: @escaping (ValueType) -> Void) {
 		os_log("%@ [%@] register", log: .default, type: .debug, self.selfTypeString, self.identifier)
 
 		// First a little housekeeping...
 		self.cleanupInactiveBindings()
 
-		// Add the binding
-		self.bindings.append(Binding(object, changeBlock))
+		// Add the binding. If a lifetime object isn't specified, ties the lifetime of the binding to the binding itself
+		self.bindings.append(Binding(object ?? self, changeBlock))
 
 		// Call with the initial value to initialize the binding object's state
 		changeBlock(self.wrappedValue)
@@ -152,13 +152,10 @@ public extension ValueBinder {
 	}
 }
 
+// Conveniences for combine
+
 @available(macOS 10.15, iOS 13, tvOS 13, *)
 public extension ValueBinder {
-	/// Sends a value to the subscriber.
-	internal func send(_ input: ValueType) {
-		self.publisher?.passthroughSubject.send(input)
-	}
-
 	/// Attaches a subscriber with closure-based behavior to a publisher that never fails. Returns `nil` if the publisher isn't available
 	func sink(receiveValue: @escaping ((ValueType) -> Void)) -> AnyCancellable? {
 		self.publisher?.passthroughSubject.sink(receiveValue: receiveValue)
