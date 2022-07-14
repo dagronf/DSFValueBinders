@@ -6,7 +6,7 @@ import PackageDescription
 let package = Package(
 	name: "DSFValueBinders",
 	platforms: [
-		.macOS(.v10_12),
+		.macOS(.v10_11),
 		.iOS(.v13),
 		.tvOS(.v13),
 	],

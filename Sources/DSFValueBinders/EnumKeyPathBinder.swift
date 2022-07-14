@@ -110,14 +110,18 @@ public class EnumKeyPathBinder<ClassType: NSObject, ValueType: RawRepresentable>
 			// The bound keypath has changed (and it's not from us). Update the value
 			self.wrappedValue = value
 
-			os_log(
-				"%@ [%@] value update to '%@'",
-				log: .default,
-				type: .debug,
-				"\(type(of: self))",
-				"\(self.identifier)",
-				"\(self.wrappedValue)"
-			)
+			if #available(macOS 10.12, *) {
+				os_log(
+					"%@ [%@] value update to '%@'",
+					log: .default,
+					type: .debug,
+					"\(type(of: self))",
+					"\(self.identifier)",
+					"\(self.wrappedValue)"
+				)
+			} else {
+				// Fallback on earlier versions
+			}
 
 			self.callback?(value)
 		}
@@ -127,14 +131,18 @@ public class EnumKeyPathBinder<ClassType: NSObject, ValueType: RawRepresentable>
 		super.valueDidChange()
 
 		self.lock.tryLock {
-			os_log(
-				"%@ [%@] value update to '%@'",
-				log: .default,
-				type: .debug,
-				"\(type(of: self))",
-				"\(self.identifier)",
-				"\(self.wrappedValue)"
-			)
+			if #available(macOS 10.12, *) {
+				os_log(
+					"%@ [%@] value update to '%@'",
+					log: .default,
+					type: .debug,
+					"\(type(of: self))",
+					"\(self.identifier)",
+					"\(self.wrappedValue)"
+				)
+			} else {
+				// Fallback on earlier versions
+			}
 
 			// Push the new value through to the bound keypath
 			object?.setValue(self.wrappedValue.rawValue, forKey: stringPath)

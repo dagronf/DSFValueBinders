@@ -100,7 +100,11 @@ public class ValueBinder<ValueType: Any> {
 	}
 
 	deinit {
-		os_log("%@ [%@] deinit", log: .default, type: .debug, selfTypeString, identifier)
+		if #available(macOS 10.12, *) {
+			os_log("%@ [%@] deinit", log: .default, type: .debug, selfTypeString, identifier)
+		} else {
+			// Fallback on earlier versions
+		}
 		self.deregisterAll()
 	}
 
@@ -125,7 +129,11 @@ public extension ValueBinder {
 	///   - object: The registering object. Held weakly to detect when the registering object is deallocated and we should no longer call the change block. If nil, uses the ValueBinder object itself as the lifetime
 	///   - changeBlock: The block to call when the value in the ValueBinder instance changes
 	func register(_ object: AnyObject? = nil, _ changeBlock: @escaping (ValueType) -> Void) {
-		os_log("%@ [%@] register", log: .default, type: .debug, self.selfTypeString, self.identifier)
+		if #available(macOS 10.12, *) {
+			os_log("%@ [%@] register", log: .default, type: .debug, self.selfTypeString, self.identifier)
+		} else {
+			// Fallback on earlier versions
+		}
 
 		// First a little housekeeping...
 		self.cleanupInactiveBindings()
@@ -141,7 +149,11 @@ public extension ValueBinder {
 	/// - Parameters:
 	///   - object: The object to deregister
 	func deregister(_ object: AnyObject) {
-		os_log("%@ [%@] deregister", log: .default, type: .debug, self.selfTypeString, self.identifier)
+		if #available(macOS 10.12, *) {
+			os_log("%@ [%@] deregister", log: .default, type: .debug, self.selfTypeString, self.identifier)
+		} else {
+			// Fallback on earlier versions
+		}
 		self.bindings = self.bindings.filter { $0.isAlive && $0.object !== object }
 	}
 

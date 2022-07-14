@@ -102,14 +102,18 @@ public class KeyPathBinder<ClassType: NSObject, ValueType: Any>: ValueBinder<Val
 	private func kvoUpdate(_ value: NSKeyValueObservedChange<ValueType>) {
 		self.lock.tryLock {
 			if let newValue = value.newValue {
-				os_log(
-					"%@ [%@] KVO update to '%@'",
-					log: .default,
-					type: .debug,
-					"\(type(of: self))",
-					"\(self.identifier)",
-					"\(newValue)"
-				)
+				if #available(macOS 10.12, *) {
+					os_log(
+						"%@ [%@] KVO update to '%@'",
+						log: .default,
+						type: .debug,
+						"\(type(of: self))",
+						"\(self.identifier)",
+						"\(newValue)"
+					)
+				} else {
+					// Fallback on earlier versions
+				}
 				// The bound keypath has changed (and it's not from us). Update the value
 				self.wrappedValue = newValue
 				self.callback?(newValue)
@@ -121,14 +125,18 @@ public class KeyPathBinder<ClassType: NSObject, ValueType: Any>: ValueBinder<Val
 		super.valueDidChange()
 
 		self.lock.tryLock {
-			os_log(
-				"%@ [%@] value update to '%@'",
-				log: .default,
-				type: .debug,
-				"\(type(of: self))",
-				"\(self.identifier)",
-				"\(self.wrappedValue)"
-			)
+			if #available(macOS 10.12, *) {
+				os_log(
+					"%@ [%@] value update to '%@'",
+					log: .default,
+					type: .debug,
+					"\(type(of: self))",
+					"\(self.identifier)",
+					"\(self.wrappedValue)"
+				)
+			} else {
+				// Fallback on earlier versions
+			}
 
 			// Push the new value through to the bound keypath
 			object?.setValue(self.wrappedValue, forKey: stringPath)
