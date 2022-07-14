@@ -1,6 +1,12 @@
 @testable import DSFValueBinders
 import XCTest
 
+// swiftlint:disable file_length
+// swiftlint:disable line_length
+// swiftlint:disable identifier_name
+// swiftlint:disable force_try
+// swiftlint:disable type_body_length
+
 final class DSFValueBindersTests: XCTestCase {
 	class Counter {
 		var count = 0
@@ -228,9 +234,9 @@ final class DSFValueBindersTests: XCTestCase {
 
 			func doUpdate() {
 				// Update the dynamicValue via the binder
-				binder.wrappedValue = -9876.54
+				self.binder.wrappedValue = -9876.54
 				// Update the binder via the dynamicValue
-				dynamicValue = 1024.56
+				self.dynamicValue = 1024.56
 			}
 		}
 
@@ -239,10 +245,11 @@ final class DSFValueBindersTests: XCTestCase {
 	}
 
 	func testDoco2() {
-		class controller {
+		class TestController {
 			let countBinder = ValueBinder<Int>(999) { newValue in
 				Swift.print("Controller object notifies change: \(newValue)")
 			}
+
 			lazy var one = One(countBinder)
 			lazy var two = Two(countBinder)
 		}
@@ -250,34 +257,36 @@ final class DSFValueBindersTests: XCTestCase {
 		class One {
 			private let _countBinder: ValueBinder<Int>
 			init(_ countBinder: ValueBinder<Int>) {
-				_countBinder = countBinder
+				self._countBinder = countBinder
 				// Listen for changes to the binder
-				_countBinder.register(self) { newValue in
+				self._countBinder.register(self) { newValue in
 					// Do something with 'newValue'
 					Swift.print("One object notifies change: \(newValue)")
 				}
 			}
+
 			func update() {
-				_countBinder.wrappedValue = 11
+				self._countBinder.wrappedValue = 11
 			}
 		}
 
 		class Two {
 			private let _countBinder: ValueBinder<Int>
 			init(_ countBinder: ValueBinder<Int>) {
-				_countBinder = countBinder
+				self._countBinder = countBinder
 				// Listen for changes to the binder
-				_countBinder.register(self) { newValue in
+				self._countBinder.register(self) { newValue in
 					// Do something with 'newValue'
 					Swift.print("Two object notifies change: \(newValue)")
 				}
 			}
+
 			func update() {
-				_countBinder.wrappedValue = 22
+				self._countBinder.wrappedValue = 22
 			}
 		}
 
-		let c = controller()
+		let c = TestController()
 		c.one.update()
 		c.two.update()
 	}
@@ -288,25 +297,22 @@ final class DSFValueBindersTests: XCTestCase {
 		case second = 2
 	}
 
-
 	func testEnumKeyPathBinding() {
 		@objc class Container: NSObject {
 			let deleteExp: XCTestExpectation
 
-			@objc dynamic public var testingMode = TestingType.initial
+			@objc public dynamic var testingMode = TestingType.initial
 			lazy var currentValue: TestingType = self.testingMode
 
-			lazy var boundKeyPath: EnumKeyPathBinder<Container, TestingType> = {
-				return try! .init(self, keyPath: \.testingMode) { [weak self] newValue in
-					Swift.print("boundKeyPath notifies change: \(newValue)")
-					self?.currentValue = newValue
-				}
-			}()
+			lazy var boundKeyPath: EnumKeyPathBinder<Container, TestingType> = try! .init(self, keyPath: \.testingMode) { [weak self] newValue in
+				Swift.print("boundKeyPath notifies change: \(newValue)")
+				self?.currentValue = newValue
+			}
 
 			init(_ deleteExp: XCTestExpectation) {
 				self.deleteExp = deleteExp
 				super.init()
-				_ = boundKeyPath
+				_ = self.boundKeyPath
 			}
 
 			deinit {
@@ -318,7 +324,6 @@ final class DSFValueBindersTests: XCTestCase {
 		let deletionCheck = XCTestExpectation()
 
 		autoreleasepool {
-
 			// Check for callbacks on registered listeners
 			// There should be 4 updates on the registered callback
 			let exp = XCTestExpectation()
@@ -368,7 +373,6 @@ final class DSFValueBindersTests: XCTestCase {
 	}
 
 	func testRegisterWeak() {
-
 		class Wrapper: NSObject {
 			init(wrapper: ValueBinder<Int>) {
 				super.init()
@@ -417,31 +421,27 @@ final class DSFValueBindersTests: XCTestCase {
 
 #if os(macOS)
 final class DSFValueBindersMacOnlyTests: XCTestCase {
-
 	func testKeyPathState() throws {
-
 		class MyViewController: NSViewController {
 			@objc dynamic var buttonState = NSControl.StateValue.on
 
-			lazy var boundKeyPath: KeyPathBinder<MyViewController, NSControl.StateValue> = {
-				return try! .init(self, keyPath: \.buttonState) { newValue in
-					Swift.print("boundKeyPath notifies change: \(newValue)")
-				}
-			}()
+			lazy var boundKeyPath: KeyPathBinder<MyViewController, NSControl.StateValue> = try! .init(self, keyPath: \.buttonState) { newValue in
+				Swift.print("boundKeyPath notifies change: \(newValue)")
+			}
 
 			init() {
 				super.init(nibName: nil, bundle: nil)
-				_ = boundKeyPath
+				_ = self.boundKeyPath
 			}
 
+			@available(*, unavailable)
 			required init?(coder: NSCoder) {
 				fatalError("init(coder:) has not been implemented")
 			}
 
 			func resetState() {
-				boundKeyPath.wrappedValue = .on
+				self.boundKeyPath.wrappedValue = .on
 			}
-
 		}
 
 		let obj = MyViewController()
@@ -455,24 +455,21 @@ final class DSFValueBindersMacOnlyTests: XCTestCase {
 		XCTAssertEqual(.on, obj.buttonState)
 	}
 
-	@objc dynamic public var sizeMode = NSToolbar.SizeMode.regular
+	@objc public dynamic var sizeMode = NSToolbar.SizeMode.regular
 	func testEnum() {
-
 		var exp = XCTestExpectation()
 
-		let boundKeyPath: EnumKeyPathBinder<DSFValueBindersMacOnlyTests, NSToolbar.SizeMode> = {
-			return try! .init(self, keyPath: \.sizeMode) { newValue in
-				Swift.print("boundKeyPath notifies change: \(newValue)")
-				exp.fulfill()
-			}
-		}()
+		let boundKeyPath: EnumKeyPathBinder<DSFValueBindersMacOnlyTests, NSToolbar.SizeMode> = try! .init(self, keyPath: \.sizeMode) { newValue in
+			Swift.print("boundKeyPath notifies change: \(newValue)")
+			exp.fulfill()
+		}
 		_ = boundKeyPath
 
-		sizeMode = .small
+		self.sizeMode = .small
 		wait(for: [exp], timeout: 5)
 
 		exp = XCTestExpectation()
-		sizeMode = .default
+		self.sizeMode = .default
 		wait(for: [exp], timeout: 5)
 	}
 }

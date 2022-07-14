@@ -85,8 +85,9 @@ public class EnumKeyPathBinder<ClassType: NSObject, ValueType: RawRepresentable>
 
 		// Start listening for kvo changes
 		self.kvoObservation = object.observe(keyPath, options: [.new]) { [weak self] obj, value in
-			if let raw = obj.value(forKeyPath: stringKeyPath) as? ValueType.RawValue,
-			   let newValue = ValueType(rawValue: raw)
+			if
+				let raw = obj.value(forKeyPath: stringKeyPath) as? ValueType.RawValue,
+				let newValue = ValueType(rawValue: raw)
 			{
 				self?.kvoUpdate(newValue)
 			}
@@ -119,7 +120,8 @@ public class EnumKeyPathBinder<ClassType: NSObject, ValueType: RawRepresentable>
 					"\(self.identifier)",
 					"\(self.wrappedValue)"
 				)
-			} else {
+			}
+			else {
 				// Fallback on earlier versions
 			}
 
@@ -140,7 +142,8 @@ public class EnumKeyPathBinder<ClassType: NSObject, ValueType: RawRepresentable>
 					"\(self.identifier)",
 					"\(self.wrappedValue)"
 				)
-			} else {
+			}
+			else {
 				// Fallback on earlier versions
 			}
 

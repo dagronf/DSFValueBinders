@@ -49,7 +49,7 @@ extension ValueBinder {
 
 		// Called when the wrapped value changes. Propagate the new value through the changeblock
 		func didChange(_ value: ValueType) -> Bool {
-			if let _ = object, let callback = changeBlock {
+			if object != nil, let callback = changeBlock {
 				callback(value)
 				return true
 			}

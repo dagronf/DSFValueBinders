@@ -25,7 +25,8 @@ import Foundation
 import Combine
 #endif
 
-/// A combine publisher wrapper to abstract away the complexities of including publishing support without breaking older os builds
+/// A combine publisher wrapper to abstract away the complexities of including publishing support
+/// without breaking older os builds
 public class WrappedPublisher<ValueType> {
 	/// Create a wrapped publisher
 	public init?() {
@@ -76,6 +77,8 @@ public extension WrappedPublisher {
 }
 
 // Private
+
+// swiftlint:disable force_cast
 
 @available(macOS 10.15, iOS 13, tvOS 13, *)
 internal extension WrappedPublisher {

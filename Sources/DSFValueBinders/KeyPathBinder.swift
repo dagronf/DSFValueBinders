@@ -82,7 +82,7 @@ public class KeyPathBinder<ClassType: NSObject, ValueType: Any>: ValueBinder<Val
 		super.init(initialValue, identifier)
 
 		// Start listening for kvo changes
-		self.kvoObservation = object.observe(keyPath, options: [.new]) { [weak self] obj, value in
+		self.kvoObservation = object.observe(keyPath, options: [.new]) { [weak self] _, value in
 			self?.kvoUpdate(value)
 		}
 	}
@@ -111,7 +111,8 @@ public class KeyPathBinder<ClassType: NSObject, ValueType: Any>: ValueBinder<Val
 						"\(self.identifier)",
 						"\(newValue)"
 					)
-				} else {
+				}
+				else {
 					// Fallback on earlier versions
 				}
 				// The bound keypath has changed (and it's not from us). Update the value
@@ -134,7 +135,8 @@ public class KeyPathBinder<ClassType: NSObject, ValueType: Any>: ValueBinder<Val
 					"\(self.identifier)",
 					"\(self.wrappedValue)"
 				)
-			} else {
+			}
+			else {
 				// Fallback on earlier versions
 			}
 
