@@ -20,7 +20,6 @@
 //
 
 import Foundation
-import os
 
 /// A specialized KeyPath binder specifically for enum types.
 ///
@@ -101,7 +100,7 @@ public class EnumKeyPathBinder<ClassType: NSObject, ValueType: RawRepresentable>
 	private weak var object: ClassType?
 	private var kvoObservation: NSKeyValueObservation?
 	private let stringPath: String
-	private let lock = NSLock()
+	private let lock = SemLock()
 	private let callback: ((ValueType) -> Void)?
 
 	// MARK: - Change handling
@@ -110,21 +109,6 @@ public class EnumKeyPathBinder<ClassType: NSObject, ValueType: RawRepresentable>
 		self.lock.tryLock {
 			// The bound keypath has changed (and it's not from us). Update the value
 			self.wrappedValue = value
-
-			if #available(macOS 10.12, *) {
-				os_log(
-					"%@ [%@] value update to '%@'",
-					log: .default,
-					type: .debug,
-					"\(type(of: self))",
-					"\(self.identifier)",
-					"\(self.wrappedValue)"
-				)
-			}
-			else {
-				// Fallback on earlier versions
-			}
-
 			self.callback?(value)
 		}
 	}
@@ -133,20 +117,6 @@ public class EnumKeyPathBinder<ClassType: NSObject, ValueType: RawRepresentable>
 		super.valueDidChange()
 
 		self.lock.tryLock {
-			if #available(macOS 10.12, *) {
-				os_log(
-					"%@ [%@] value update to '%@'",
-					log: .default,
-					type: .debug,
-					"\(type(of: self))",
-					"\(self.identifier)",
-					"\(self.wrappedValue)"
-				)
-			}
-			else {
-				// Fallback on earlier versions
-			}
-
 			// Push the new value through to the bound keypath
 			object?.setValue(self.wrappedValue.rawValue, forKey: stringPath)
 			self.callback?(self.wrappedValue)

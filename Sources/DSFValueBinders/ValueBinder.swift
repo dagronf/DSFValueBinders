@@ -20,7 +20,6 @@
 //
 
 import Foundation
-import os
 
 #if canImport(Combine)
 import Combine
@@ -100,12 +99,6 @@ public class ValueBinder<ValueType: Any> {
 	}
 
 	deinit {
-		if #available(macOS 10.12, *) {
-			os_log("%@ [%@] deinit", log: .default, type: .debug, selfTypeString, identifier)
-		}
-		else {
-			// Fallback on earlier versions
-		}
 		self.deregisterAll()
 	}
 
@@ -134,13 +127,6 @@ public extension ValueBinder {
 	///   - object: The registering object.
 	///   - changeBlock: The block to call when the value in the ValueBinder instance changes
 	func register(_ object: AnyObject? = nil, _ changeBlock: @escaping (ValueType) -> Void) {
-		if #available(macOS 10.12, *) {
-			os_log("%@ [%@] register", log: .default, type: .debug, self.selfTypeString, self.identifier)
-		}
-		else {
-			// Fallback on earlier versions
-		}
-
 		// First a little housekeeping...
 		self.cleanupInactiveBindings()
 
@@ -155,12 +141,6 @@ public extension ValueBinder {
 	/// - Parameters:
 	///   - object: The object to deregister
 	func deregister(_ object: AnyObject) {
-		if #available(macOS 10.12, *) {
-			os_log("%@ [%@] deregister", log: .default, type: .debug, self.selfTypeString, self.identifier)
-		}
-		else {
-			// Fallback on earlier versions
-		}
 		self.bindings = self.bindings.filter { $0.isAlive && $0.object !== object }
 	}
 
