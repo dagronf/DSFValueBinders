@@ -23,37 +23,44 @@ import Foundation
 
 public extension ValueBinder {
 	/// Returns a new value binder which returns a transformed value from this binder
+	/// - Parameter block: A block which transforms this binder's value to a new value
+	/// - Returns: A new ValueBinder
 	func transform<NEWBINDERTYPE>(
-		_ block: @escaping (ValueBinder<ValueType>) -> NEWBINDERTYPE
+		_ block: @escaping (ValueType) -> NEWBINDERTYPE
 	) -> ValueBinder<NEWBINDERTYPE> {
-
-		let initialValue = block(self)
+		// Grab out the current value of this binder, and transform it using the block
+		let initialValue = block(self.wrappedValue)
 
 		// Create the binder
 		let newBinder = ValueBinder<NEWBINDERTYPE>(initialValue)
 
-		self.register { [weak self] newValue in
-			guard let `self` = self else { return }
-			newBinder.wrappedValue = block(self)
+		self.register { newValue in
+			// guard let `self` = self else { return }
+			newBinder.wrappedValue = block(newValue)
 		}
 		return newBinder
 	}
 }
 
+// MARK: - Transform examples
+
 public extension ValueBinder where ValueType == Bool {
 	/// Returns a value binder which returns a toggled version of this valuebinder's wrapped bool value
 	func toggled() -> ValueBinder<Bool> {
-		let negated = ValueBinder(!self.wrappedValue)
-		self.register { newValue in
-			negated.wrappedValue = !newValue
-		}
-		return negated
+		self.transform { !$0 }
 	}
+}
 
-	/// Returns a value binder which returns a toggled version of this valuebinder's wrapped bool value
-//	func toggled() -> ValueBinder<Bool> {
-//		self.transform { origBinder in
-//			!origBinder.wrappedValue
-//		}
-//	}
+public extension ValueBinder where ValueType == Int {
+	/// A simple transformer that returns a ValueBinder that presents the words representation for an int
+	func asWords(locale: Locale? = nil) -> ValueBinder<String> {
+		self.transform { newValue in
+			let nf = NumberFormatter()
+			nf.numberStyle = .spellOut
+			if let locale = locale {
+				nf.locale = locale
+			}
+			return nf.string(from: NSNumber(value: newValue)) ?? ""
+		}
+	}
 }

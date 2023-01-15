@@ -12,7 +12,7 @@ let package = Package(
 	products: [
 		.library(name: "DSFValueBinders", targets: ["DSFValueBinders"]),
 		.library(name: "DSFValueBinders-static", type: .static, targets: ["DSFValueBinders"]),
-		.library(name: "DSFValueBinders-shared", type: .dynamic, targets: ["DSFValueBinders"]),
+		.library(name: "DSFValueBinders-shared", type: .dynamic, targets: ["DSFValueBinders"])
 	],
 	targets: [
 		.target(

@@ -68,8 +68,6 @@ class AnotherClass {
 }
 ```
 
-'Registered' listeners are bound weakly to the ValueBinder, meaning that a listener 
-
 ### Updating the ValueBinder value
 
 Any object that holds a `ValueBinder` object can update the wrapped value. 
