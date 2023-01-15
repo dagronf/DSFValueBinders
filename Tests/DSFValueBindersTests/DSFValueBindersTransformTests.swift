@@ -142,4 +142,20 @@ final class ValueBindersExtensionTests: XCTestCase {
 		XCTAssertNil(wb1)
 		XCTAssertNil(ib1)
 	}
+
+	func testIntToStringTransformer() throws {
+		let intBinding = ValueBinder<Int>(10)
+		let intStringBinding = intBinding.stringValue()
+		let doubleBinding = ValueBinder<Double>(99.343)
+		let doubleStringBinding = doubleBinding.stringValue()
+
+		XCTAssertEqual("10", intStringBinding.wrappedValue)
+		XCTAssertEqual("99.343", doubleStringBinding.wrappedValue)
+
+		intBinding.wrappedValue = 22910
+		XCTAssertEqual("22910", intStringBinding.wrappedValue)
+
+		doubleBinding.wrappedValue = -15.6
+		XCTAssertEqual("-15.6", doubleStringBinding.wrappedValue)
+	}
 }

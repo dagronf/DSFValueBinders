@@ -51,6 +51,13 @@ public extension ValueBinder where ValueType == Bool {
 	}
 }
 
+public extension ValueBinder where ValueType: ExpressibleByIntegerLiteral {
+	/// A basic Int/Double etc. to String conversion
+	func stringValue() -> ValueBinder<String> {
+		self.transform { "\($0)" }
+	}
+}
+
 public extension ValueBinder where ValueType == Int {
 	/// A simple transformer that returns a ValueBinder that presents the words representation for an int
 	func asWords(locale: Locale? = nil) -> ValueBinder<String> {
