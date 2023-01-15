@@ -58,6 +58,20 @@ public extension ValueBinder where ValueType: ExpressibleByIntegerLiteral {
 	}
 }
 
+public extension ValueBinder where ValueType == Double {
+	/// Get an integer represetation of the double value
+	func intValue(rule: FloatingPointRoundingRule = .towardZero) -> ValueBinder<Int> {
+		self.transform { Int($0.rounded(rule)) }
+	}
+}
+
+public extension ValueBinder where ValueType == Float {
+	/// Get an integer represetation of the float value
+	func intValue(rule: FloatingPointRoundingRule = .towardZero) -> ValueBinder<Int> {
+		self.transform { Int($0.rounded(rule)) }
+	}
+}
+
 public extension ValueBinder where ValueType == Int {
 	/// A simple transformer that returns a ValueBinder that presents the words representation for an int
 	func asWords(locale: Locale? = nil) -> ValueBinder<String> {
