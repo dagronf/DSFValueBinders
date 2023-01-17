@@ -22,6 +22,8 @@
 import Foundation
 
 /// A propertywrapper implementation for `ValueBinder`
+///
+/// Implementation by [Mx-Iris](https://github.com/dagronf/DSFValueBinders/pull/2)
 @propertyWrapper
 public struct ValueBinding<ValueType> {
 	private let valueBinder: ValueBinder<ValueType>
