@@ -119,6 +119,33 @@ let cancellable = binder.publisher?.sink { newValue in
 }
 ```
 
+## `ValueBinding` PropertyWrapper
+
+`ValueBinding` is a property wrapper implementation for the `ValueBinder` type.
+Thanks to [Mx-Iris](https://github.com/Mx-Iris) for sharing their implementation. 
+
+### Example
+
+```swift
+@ValueBinding var countValue = 0
+
+// Register a block for updates
+$countValue.register { newValue in 
+   Swift.print("countValue is now \(newValue)")
+}
+
+countValue = 4  // triggers the update callback
+// prints "countValue is now 4"
+
+// Register for combine updates
+$countValue.publisher?.publisher
+   .receive(on: DispatchQueue.global(qos: .background))
+   .sink { newValue in
+      // Do something with 'newValue'
+   }
+   .store(in: &subscribers)
+```
+
 ## License
 
 ```
