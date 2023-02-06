@@ -1,5 +1,5 @@
 //
-//  ValueBinder+transform.swift
+//  Utils.swift
 //
 //  Copyright © 2023 Darren Ford. All rights reserved.
 //
@@ -21,22 +21,35 @@
 
 import Foundation
 
-public extension ValueBinder {
-	/// Returns a new value binder which returns a transformed value from this binder
-	/// - Parameter block: A block which transforms this binder's value to a new value
-	/// - Returns: A new ValueBinder
-	func transform<NEWBINDERTYPE>(
-		_ block: @escaping (ValueType) -> NEWBINDERTYPE
-	) -> ValueBinder<NEWBINDERTYPE> {
-		// Grab out the current value of this binder, and transform it using the block
-		let initialValue = block(self.wrappedValue)
-
-		// Create the binder
-		let newBinder = ValueBinder<NEWBINDERTYPE>(initialValue)
-
-		self.register { newValue in
-			newBinder.wrappedValue = block(newValue)
-		}
-		return newBinder
+extension NumberFormatter {
+	convenience init(_ initializerBlock: (NumberFormatter) -> Void) {
+		self.init()
+		initializerBlock(self)
 	}
+}
+
+class MemoryDisposeBag {
+	func add(_ obj: AnyObject?) {
+		self.elements.append(Item(obj))
+	}
+
+	func isEmpty() -> Bool {
+		self.clean()
+		return self.elements.filter { $0.weakObject != nil }.isEmpty
+	}
+
+	func clean() {
+		self.elements = self.elements.filter { $0.weakObject != nil }
+	}
+
+	//
+
+	private class Item {
+		weak var weakObject: AnyObject?
+		init(_ obj: AnyObject?) {
+			self.weakObject = obj
+		}
+	}
+
+	private var elements: [Item] = []
 }

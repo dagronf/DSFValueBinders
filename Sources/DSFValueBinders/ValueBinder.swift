@@ -115,6 +115,15 @@ public class ValueBinder<ValueType: Any> {
 	private lazy var selfTypeString = "\(type(of: self))"
 }
 
+// MARK: - Constant defs
+
+public extension ValueBinder {
+	/// A convenience for creating a ValueBinder with a value
+	static func constant(_ value: ValueType) -> ValueBinder<ValueType> {
+		ValueBinder(value)
+	}
+}
+
 // MARK: - Register/Deregister
 
 public extension ValueBinder {
