@@ -426,6 +426,29 @@ final class DSFValueBindersTests: XCTestCase {
 		XCTAssertEqual(1, intBinding.totalBindingCount)
 		XCTAssertEqual(1, intBinding.activeBindingCount)
 	}
+
+	func testCombineBinder() throws {
+
+		let disposeBag = MemoryDisposeBag()
+
+		autoreleasepool {
+			let v1 = ValueBinder("value1")
+			let v2 = ValueBinder("value2")
+			let c1 = CombiningValueBuilder(v1, v2) { v1Value, v2Value in
+				v1Value == v2Value
+			}
+
+			disposeBag.add(v1, v2, c1)
+
+			XCTAssertEqual(false, c1.wrappedValue)
+
+			v1.wrappedValue = "value2"
+			XCTAssertEqual(true, c1.wrappedValue)
+		}
+
+		XCTAssertTrue(disposeBag.isEmpty())
+	}
+
 }
 
 // Tests for picking up the specific issue that I found in DSFToolbar

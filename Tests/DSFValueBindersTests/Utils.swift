@@ -33,6 +33,12 @@ class MemoryDisposeBag {
 		self.elements.append(Item(obj))
 	}
 
+	func add(_ obj: AnyObject?...) {
+		obj.forEach {
+			self.elements.append(Item($0))
+		}
+	}
+
 	func isEmpty() -> Bool {
 		self.clean()
 		return self.elements.filter { $0.weakObject != nil }.isEmpty
