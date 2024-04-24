@@ -25,10 +25,20 @@ import Foundation
 import Combine
 #endif
 
+/// The core protocol for a binding registration
+///
+/// This allows binders of multiple types to be grouped together into (eg) a bag of binders
+/// that can be deregistered without having to know the type
+public protocol ValueBinderRegistrable {
+	/// Call to deregister an object from the binding
+	/// - Parameter object: the object to deregister
+	func deregister(_ object: AnyObject)
+}
+
 // MARK: - ValueBinder
 
 /// A wrapped value binder for sharing dynamic values between elements
-public class ValueBinder<ValueType: Any> {
+public class ValueBinder<ValueType: Any>: ValueBinderRegistrable {
 	/// An identifier for the binder for use when debugging
 	public let identifier: String
 

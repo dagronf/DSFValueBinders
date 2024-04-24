@@ -449,6 +449,29 @@ final class DSFValueBindersTests: XCTestCase {
 		XCTAssertTrue(disposeBag.isEmpty())
 	}
 
+	func testValueBinderProtocol() throws {
+		var bindings: [ValueBinderRegistrable] = []
+		let v1 = ValueBinder("value1")
+		let v2 = ValueBinder(0.15)
+		
+		bindings.append(v1)
+		bindings.append(v2)
+
+		v1.register(self) { newValue in
+			Swift.print("text changed: \(newValue)")
+		}
+
+		v2.register(self) { newValue in
+			Swift.print("value changed: \(newValue)")
+		}
+
+		v1.wrappedValue = "hi ive changed"
+		v2.wrappedValue = 2.22
+
+		bindings.forEach { $0.deregister(self) }
+
+		v1.wrappedValue = "hi ive changed again"
+	}
 }
 
 // Tests for picking up the specific issue that I found in DSFToolbar
