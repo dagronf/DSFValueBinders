@@ -82,6 +82,9 @@ public class EnumKeyPathBinder<ClassType: NSObject, ValueType: RawRepresentable>
 
 		super.init(initialValue, identifier)
 
+		// Sync with the initial value of the kvo
+		self.kvoUpdate(initialValue)
+
 		// Start listening for kvo changes
 		self.kvoObservation = object.observe(keyPath, options: [.new]) { [weak self] obj, value in
 			if

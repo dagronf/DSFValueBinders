@@ -80,6 +80,9 @@ public class KeyPathBinder<ClassType: NSObject, ValueType: Any>: ValueBinder<Val
 
 		super.init(initialValue, identifier)
 
+		// Synchronize the initial value of the kvo
+		self.update(with: initialValue)
+
 		// Start listening for kvo changes
 		self.kvoObservation = object.observe(keyPath, options: [.new]) { [weak self] _, value in
 			self?.kvoUpdate(value)
@@ -99,18 +102,21 @@ public class KeyPathBinder<ClassType: NSObject, ValueType: Any>: ValueBinder<Val
 	// MARK: - Change handling
 
 	private func kvoUpdate(_ value: NSKeyValueObservedChange<ValueType>) {
+		if let value = value.newValue {
+			self.update(with: value)
+		}
+	}
+
+	private func update(with value: ValueType) {
 		self.lock.tryLock {
-			if let newValue = value.newValue {
-				// The bound keypath has changed (and it's not from us). Update the value
-				self.wrappedValue = newValue
-				self.callback?(newValue)
-			}
+			// The bound keypath has changed (and it's not from us). Update the value
+			self.wrappedValue = value
+			self.callback?(value)
 		}
 	}
 
 	override public func valueDidChange() {
 		super.valueDidChange()
-
 		self.lock.tryLock {
 			// Push the new value through to the bound keypath
 			object?.setValue(self.wrappedValue, forKey: stringPath)
